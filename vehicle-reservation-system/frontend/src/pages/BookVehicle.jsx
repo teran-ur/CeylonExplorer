@@ -22,7 +22,7 @@ export default function BookVehicle() {
     phone: '',
     notes: ''
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
@@ -32,7 +32,7 @@ export default function BookVehicle() {
     const load = async () => {
       const data = await fetchVehicles();
       // Sort as requested
-      data.sort((a,b) => a.pricePerDay - b.pricePerDay);
+      data.sort((a, b) => a.pricePerDay - b.pricePerDay);
       setVehicles(data);
       // If vehicleId param provided, ensure it's selected (React state init handled it, but just in case)
       if (vehicleId) {
@@ -85,7 +85,33 @@ export default function BookVehicle() {
       });
 
       setSuccess(true);
-      window.scrollTo(0,0);
+
+      // WhatsApp Integration
+      const message = `*New Booking Request*
+      
+*Vehicle:* ${vehicle ? vehicle.name : 'Unknown'}
+*Ref:* ${formData.vehicleId}
+
+*Customer Details:*
+Name: ${formData.name}
+Phone: ${formData.phone}
+Email: ${formData.email}
+
+*Journey Details:*
+From: ${formData.pickupLocation}
+To: ${formData.dropoffLocation}
+Pickup: ${formData.pickupDate} at ${formData.pickupTime}
+Dropoff: ${formData.dropoffDate} at ${formData.dropoffTime}
+
+*Total Price:* $${price}
+
+*Notes:* ${formData.notes || 'None'}
+`;
+
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/94767439588?text=${encodedMessage}`, '_blank');
+
+      window.scrollTo(0, 0);
     } catch (err) {
       console.error(err);
       setError("Failed to submit booking. " + err.message);
@@ -134,7 +160,7 @@ export default function BookVehicle() {
           <p>Complete the form below to reserve your vehicle. We'll confirm your booking within 24 hours.</p>
         </div>
       </div>
-      
+
       <div className="container">
         <div className="booking-layout">
           <div className="booking-form-container">
@@ -148,29 +174,29 @@ export default function BookVehicle() {
                 {error}
               </div>
             )}
-            
+
             <form className="booking-form-modern" onSubmit={handleSubmit}>
               <div className="form-section">
                 <h3>Vehicle Selection</h3>
                 <div className="form-group-modern">
                   <label htmlFor="vehicleId">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/>
-                      <polygon points="12 15 17 21 7 21 12 15"/>
+                      <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1" />
+                      <polygon points="12 15 17 21 7 21 12 15" />
                     </svg>
                     Select Vehicle
                   </label>
-                  <select 
-                    id="vehicleId" 
-                    name="vehicleId" 
-                    value={formData.vehicleId} 
-                    onChange={handleChange} 
+                  <select
+                    id="vehicleId"
+                    name="vehicleId"
+                    value={formData.vehicleId}
+                    onChange={handleChange}
                     required
                   >
                     <option value="">Choose your vehicle</option>
                     {vehicles.map(v => (
                       <option key={v.id} value={v.id}>
-                        {v.name} - ${v.pricePerDay}/day
+                        {v.name}
                       </option>
                     ))}
                   </select>
@@ -290,7 +316,7 @@ export default function BookVehicle() {
                   </label>
                   <input type="text" id="name" name="name" placeholder="Enter your full name" required value={formData.name} onChange={handleChange} />
                 </div>
-                
+
                 <div className="form-row-modern">
                   <div className="form-group-modern">
                     <label htmlFor="email">
@@ -312,7 +338,7 @@ export default function BookVehicle() {
                     <input type="tel" id="phone" name="phone" placeholder="+94 77 123 4567" required value={formData.phone} onChange={handleChange} />
                   </div>
                 </div>
-                
+
                 <div className="form-group-modern">
                   <label htmlFor="notes">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -338,7 +364,7 @@ export default function BookVehicle() {
                   <>
                     Confirm Booking
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                      <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </>
                 )}
