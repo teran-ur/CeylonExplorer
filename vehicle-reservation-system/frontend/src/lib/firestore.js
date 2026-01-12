@@ -11,6 +11,7 @@ import {
   orderBy 
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { overlaps } from "./dateOverlap";
 
 // --- Vehicles ---
 
@@ -73,6 +74,31 @@ export const fetchBookingsForVehicle = async (vehicleId) => {
 
 export const createBooking = async (payload) => {
   try {
+    if (!payload?.vehicleId) {
+      throw new Error("Missing vehicleId.");
+    }
+    if (!payload?.startDate || !payload?.endDate) {
+      throw new Error("Missing startDate or endDate.");
+    }
+    if (payload.startDate > payload.endDate) {
+      throw new Error("End date must be after start date.");
+    }
+
+    // Conflict prevention: do not allow overlapping PENDING/APPROVED bookings
+    const conflictsQuery = query(
+      collection(db, "bookings"),
+      where("vehicleId", "==", payload.vehicleId),
+      where("status", "in", ["PENDING", "APPROVED"])
+    );
+    const conflictsSnapshot = await getDocs(conflictsQuery);
+    const conflicts = conflictsSnapshot.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(b => overlaps(payload.startDate, payload.endDate, b.startDate, b.endDate));
+
+    if (conflicts.length > 0) {
+      throw new Error("Selected dates are not available for this vehicle.");
+    }
+
     const docRef = await addDoc(collection(db, "bookings"), {
       ...payload,
       status: "PENDING", // Force PENDING

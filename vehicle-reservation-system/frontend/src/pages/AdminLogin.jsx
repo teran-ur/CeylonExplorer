@@ -35,44 +35,100 @@ export default function AdminLogin() {
     }
   };
 
-  const handleSeed = async (e) => {
+  const handleSeed = async () => {
     if(window.confirm("This will add sample vehicles to the database. Continue?")) {
       await seedVehicles();
     }
   };
 
   return (
-    <div className="container login-container">
-      <h2>Admin Login</h2>
-      {error && <div className="alert error">{error}</div>}
-      <form onSubmit={handleLogin} className="login-form">
-        <div className="form-group">
-          <label>Email</label>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={e => setEmail(e.target.value)} 
-            required 
-          />
+    <div className="admin-login-page">
+      <div className="login-container-modern">
+        <div className="login-header">
+          <div className="admin-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+            </svg>
+          </div>
+          <h1>Admin Portal</h1>
+          <p>Paranamanna Travels Management</p>
         </div>
-        <div className="form-group">
-          <label>Password</label>
-          <input 
-            type="password" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)} 
-            required 
-          />
+
+        {error && (
+          <div className="alert-error">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="login-form-modern">
+          <div className="form-group-admin">
+            <label htmlFor="email">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              Email Address
+            </label>
+            <input 
+              id="email"
+              type="email" 
+              value={email} 
+              onChange={e => setEmail(e.target.value)} 
+              placeholder="admin@paranamannatravels.lk"
+              required 
+            />
+          </div>
+
+          <div className="form-group-admin">
+            <label htmlFor="password">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              Password
+            </label>
+            <input 
+              id="password"
+              type="password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              placeholder="Enter your password"
+              required 
+            />
+          </div>
+
+          <button type="submit" className="btn-login" disabled={loading}>
+            {loading ? (
+              <>
+                <div className="spinner-small"></div>
+                Logging in...
+              </>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"></path>
+                </svg>
+                Login to Dashboard
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="login-footer">
+          <button className="btn-seed" onClick={handleSeed}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+            Seed Database (Dev)
+          </button>
         </div>
-        <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-      
-      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <button className="btn-secondary" onClick={handleSeed}>
-           Seed Database (Dev Only)
-        </button>
       </div>
     </div>
   );

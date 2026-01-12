@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Vehicles from './pages/Vehicles';
 import Destinations from './pages/Destinations';
 import BookVehicle from './pages/BookVehicle';
+import About from './pages/About';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminOnlyRoute from './components/AdminOnlyRoute';
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/fleet" element={<Vehicles />} />
         <Route path="/destinations" element={<Destinations />} />
+        <Route path="/about" element={<About />} />
         <Route path="/book" element={<BookVehicle />} />
         <Route path="/book/:vehicleId" element={<BookVehicle />} />
         <Route path="/admin/login" element={<AdminLogin />} />
