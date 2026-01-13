@@ -8,7 +8,7 @@ export default function About() {
     <main className="page-container about-page">
       <div className="page-hero">
         <div className="container">
-          <h1>About Paranamanna Travels</h1>
+          <h1>About CeylonExplorer</h1>
           <p>Your trusted partner for exploring the Pearl of the Indian Ocean</p>
         </div>
       </div>
@@ -20,7 +20,7 @@ export default function About() {
             <div className="about-text">
               <h2>Our Story</h2>
               <p>
-                Founded with a passion for showcasing the beauty of Sri Lanka, Paranamanna Travels has been providing exceptional vehicle rental and tour services for travelers from around the world. We believe that the journey is just as important as the destination.
+                Founded with a passion for showcasing the beauty of Sri Lanka, CeylonExplorer has been providing exceptional vehicle rental and tour services for travelers from around the world. We believe that the journey is just as important as the destination.
               </p>
               <p>
                 Our fleet of well-maintained vehicles, ranging from compact cars to luxury vans, ensures that whether you're a solo traveler, couple, or large group, we have the perfect ride for your Sri Lankan adventure.
@@ -155,7 +155,7 @@ export default function About() {
             <div className="value-item">
               <div className="value-number">03</div>
               <h4>Integrity</h4>
-              <p>Honest, transparent, and ethical in all our dealings - that's the Paranamanna way.</p>
+              <p>Honest, transparent, and ethical in all our dealings - that's the CeylonExplorer way.</p>
             </div>
             <div className="value-item">
               <div className="value-number">04</div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { fetchVehicles } from '../lib/firestore';
 import VehicleCard from '../components/VehicleCard';
 import { useNavigate } from 'react-router-dom';
@@ -11,8 +11,49 @@ export default function Home() {
   const [selectedDestination, setSelectedDestination] = useState(null);
   const navigate = useNavigate();
 
+  const vantaRef = useRef(null);
+
   useEffect(() => {
     loadVehicles();
+
+    // Initialize Vanta
+    let vantaEffect = null;
+    const initVanta = () => {
+      if (window.VANTA && window.VANTA.CLOUDS && vantaRef.current) {
+        vantaEffect = window.VANTA.CLOUDS({
+          el: vantaRef.current,
+          mouseControls: true,
+          touchControls: true,
+          gyroControls: false,
+          minHeight: 200.00,
+          minWidth: 200.00,
+          skyColor: 0x68b8d7,
+          cloudColor: 0xadc1de,
+          cloudShadowColor: 0x183550,
+          sunColor: 0xff9900,
+          sunGlareColor: 0xff6600,
+          sunlightColor: 0xff9900,
+          speed: 1.5
+        });
+      }
+    };
+
+    // Check if script loaded, if not wait a bit or use interval
+    if (window.VANTA) {
+      initVanta();
+    } else {
+      const interval = setInterval(() => {
+        if (window.VANTA) {
+          initVanta();
+          clearInterval(interval);
+        }
+      }, 100);
+      setTimeout(() => clearInterval(interval), 5000);
+    }
+
+    return () => {
+      if (vantaEffect) vantaEffect.destroy();
+    };
   }, []);
 
   const loadVehicles = async () => {
@@ -36,13 +77,13 @@ export default function Home() {
   return (
     <main>
       {/* Hero */}
-      <section className="hero-modern">
+      <section className="hero-modern" ref={vantaRef}>
         <div className="container">
           <div className="hero-content-centered">
             <div className="hero-text-content-center">
               <h1>Explore the Pearl of the Indian Ocean with <span className="highlight">Your Freedom</span></h1>
               <p className="hero-description">Reliable and comfortable rental cars for your unforgettable journey across Sri Lanka. Choose from our premium fleet and experience the island like never before.</p>
-              
+
               <div className="hero-cta-buttons">
                 <button className="btn-hero-primary" onClick={() => navigate('/fleet#book-journey')}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -54,21 +95,8 @@ export default function Home() {
                   Check Availability
                 </button>
               </div>
-              
-              <div className="hero-features-horizontal">
-                <div className="feature-item-inline">
-                  <div className="feature-icon-inline">✓</div>
-                  <span>24/7 Support</span>
-                </div>
-                <div className="feature-item-inline">
-                  <div className="feature-icon-inline">✓</div>
-                  <span>Island-Wide Service</span>
-                </div>
-                <div className="feature-item-inline">
-                  <div className="feature-icon-inline">✓</div>
-                  <span>Flexible Policies</span>
-                </div>
-              </div>
+
+
             </div>
           </div>
         </div>
@@ -100,7 +128,7 @@ export default function Home() {
       <section className="section features-section">
         <div className="container">
           <div className="section-header">
-            <h2>Why Choose Paranamanna Travels?</h2>
+            <h2>Why Choose CeylonExplorer?</h2>
             <p className="section-subtitle">Experience the difference with our premium service and local expertise</p>
           </div>
           <div className="features-grid-modern">
@@ -149,8 +177,8 @@ export default function Home() {
           </div>
           <div className="destination-grid-modern">
             {homeDestinations.map(dest => (
-              <div 
-                key={dest.title} 
+              <div
+                key={dest.title}
                 className="destination-card-modern"
                 onClick={() => setSelectedDestination(dest)}
               >
@@ -162,18 +190,18 @@ export default function Home() {
                   <button className="btn-explore">
                     Explore
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                      <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </button>
                 </div>
               </div>
             ))}
           </div>
-          <div className="text-center" style={{marginTop:'3rem'}}>
+          <div className="text-center" style={{ marginTop: '3rem' }}>
             <button className="btn-secondary" onClick={() => navigate('/destinations')}>
               View All Destinations
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginLeft: '0.5rem'}}>
-                <path d="M5 12h14M12 5l7 7-7 7"/>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '0.5rem' }}>
+                <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </button>
           </div>
@@ -185,10 +213,10 @@ export default function Home() {
         <div className="modal-overlay" onClick={() => setSelectedDestination(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <span className="close-modal" onClick={() => setSelectedDestination(null)}>&times;</span>
-            <img src={selectedDestination.image} alt={selectedDestination.title} style={{width:'100%', height:'250px', objectFit:'cover', borderRadius:'8px'}} />
-            <h3 style={{margin:'1.5rem 0 1rem', color:'var(--primary)'}}>{selectedDestination.title}</h3>
-            <p style={{lineHeight: '1.7', color: 'var(--text-light)'}}>{selectedDestination.desc}</p>
-            <button className="btn-primary" style={{marginTop:'1.5rem', width: '100%'}} onClick={() => setSelectedDestination(null)}>Close</button>
+            <img src={selectedDestination.image} alt={selectedDestination.title} style={{ width: '100%', height: '250px', objectFit: 'cover', borderRadius: '8px' }} />
+            <h3 style={{ margin: '1.5rem 0 1rem', color: 'var(--primary)' }}>{selectedDestination.title}</h3>
+            <p style={{ lineHeight: '1.7', color: 'var(--text-light)' }}>{selectedDestination.desc}</p>
+            <button className="btn-primary" style={{ marginTop: '1.5rem', width: '100%' }} onClick={() => setSelectedDestination(null)}>Close</button>
           </div>
         </div>
       )}

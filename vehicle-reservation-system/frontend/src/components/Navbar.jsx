@@ -13,13 +13,13 @@ export default function Navbar() {
         <Link to="/" className="logo-modern">
           <div className="logo-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/>
-              <polygon points="12 15 17 21 7 21 12 15"/>
+              <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1" />
+              <polygon points="12 15 17 21 7 21 12 15" />
             </svg>
           </div>
           <span className="logo-text">
-            <span className="logo-main">Paranamanna</span>
-            <span className="logo-sub">Travels</span>
+            <span className="logo-main">Ceylon</span>
+            <span className="logo-sub">Explorer</span>
           </span>
         </Link>
         <nav className="nav-links-modern">

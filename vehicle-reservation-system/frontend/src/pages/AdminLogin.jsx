@@ -21,7 +21,7 @@ export default function AdminLogin() {
       const userCredential = await signInAdmin(email, password);
       // Check if actually admin
       const adminStatus = await isAdmin(userCredential.user.uid);
-      
+
       if (!adminStatus) {
         await signOut(auth);
         throw new Error("Access Denied: You are not an administrator.");
@@ -36,7 +36,7 @@ export default function AdminLogin() {
   };
 
   const handleSeed = async () => {
-    if(window.confirm("This will add sample vehicles to the database. Continue?")) {
+    if (window.confirm("This will add sample vehicles to the database. Continue?")) {
       await seedVehicles();
     }
   };
@@ -52,7 +52,7 @@ export default function AdminLogin() {
             </svg>
           </div>
           <h1>Admin Portal</h1>
-          <p>Paranamanna Travels Management</p>
+          <p>CeylonExplorer Management</p>
         </div>
 
         {error && (
@@ -75,13 +75,13 @@ export default function AdminLogin() {
               </svg>
               Email Address
             </label>
-            <input 
+            <input
               id="email"
-              type="email" 
-              value={email} 
-              onChange={e => setEmail(e.target.value)} 
-              placeholder="admin@paranamannatravels.lk"
-              required 
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="admin@ceylonexplorer.lk"
+              required
             />
           </div>
 
@@ -93,13 +93,13 @@ export default function AdminLogin() {
               </svg>
               Password
             </label>
-            <input 
+            <input
               id="password"
-              type="password" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
               placeholder="Enter your password"
-              required 
+              required
             />
           </div>
 

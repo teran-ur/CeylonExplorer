@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { fetchBookingsByStatus, updateBookingStatus, fetchBookingsForVehicle } from '../lib/firestore';
+import { fetchBookingsByStatus, updateBookingStatus, fetchBookingsForVehicle, deleteBooking, fetchAllBookings } from '../lib/firestore';
 import { overlaps } from '../lib/dateOverlap';
 import { signOutAdmin } from '../lib/auth';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 export default function AdminDashboard() {
   const [status, setStatus] = useState('PENDING'); // Uppercase default
   const [bookings, setBookings] = useState([]);
+  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0 });
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [actionError, setActionError] = useState(null);
@@ -19,8 +20,15 @@ export default function AdminDashboard() {
     setActionError(null);
     try {
       const data = await fetchBookingsByStatus(status);
-      // Ensure we only get what we asked for (though API handles it)
       setBookings(data);
+
+      // Load stats
+      const all = await fetchAllBookings();
+      setStats({
+        pending: all.filter(b => b.status === "PENDING").length,
+        approved: all.filter(b => b.status === "APPROVED").length,
+        rejected: all.filter(b => b.status === "REJECTED").length
+      });
     } catch {
       setActionError("Failed to fetch bookings.");
     } finally {
@@ -81,6 +89,24 @@ export default function AdminDashboard() {
       loadBookings();
     } catch (err) {
       console.error("Reject error:", err);
+      setActionError(err.message);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDelete = async (bookingId) => {
+    // Non-blocking interaction
+    setProcessingId(bookingId);
+    setActionError(null);
+
+    try {
+      await deleteBooking(bookingId);
+      console.log("Booking deleted successfully");
+      setExpandedId(null);
+      loadBookings();
+    } catch (err) {
+      console.error("Delete error:", err);
       setActionError(err.message);
     } finally {
       setProcessingId(null);
@@ -162,7 +188,7 @@ export default function AdminDashboard() {
             </div>
             <div className="stat-info">
               <span className="stat-label">Pending</span>
-              <span className="stat-value">{bookings.filter(b => b.status === 'PENDING').length}</span>
+              <span className="stat-value">{stats.pending}</span>
             </div>
           </div>
           <div className="stat-card">
@@ -174,7 +200,7 @@ export default function AdminDashboard() {
             </div>
             <div className="stat-info">
               <span className="stat-label">Approved</span>
-              <span className="stat-value">{bookings.filter(b => b.status === 'APPROVED').length}</span>
+              <span className="stat-value">{stats.approved}</span>
             </div>
           </div>
           <div className="stat-card">
@@ -187,7 +213,7 @@ export default function AdminDashboard() {
             </div>
             <div className="stat-info">
               <span className="stat-label">Rejected</span>
-              <span className="stat-value">{bookings.filter(b => b.status === 'REJECTED').length}</span>
+              <span className="stat-value">{stats.rejected}</span>
             </div>
           </div>
         </div>
@@ -341,7 +367,36 @@ export default function AdminDashboard() {
                               </svg>
                               {processingId === b.id ? 'Processing...' : 'Reject'}
                             </button>
+                            <button
+                              className="btn-delete"
+                              onClick={() => handleDelete(b.id)}
+                              disabled={processingId === b.id}
+                              style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              </svg>
+                              Delete
+                            </button>
                           </div>
+                        </div>
+                      )}
+
+                      {(status === 'APPROVED' || status === 'REJECTED') && (
+                        <div className="admin-actions-modern" style={{ justifyContent: 'flex-end', marginTop: '1rem' }}>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDelete(b.id)}
+                            disabled={processingId === b.id}
+                            style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            {processingId === b.id ? 'Deleting...' : 'Delete Permanently'}
+                          </button>
                         </div>
                       )}
                     </div>

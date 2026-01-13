@@ -53,17 +53,26 @@ export default function BookVehicle() {
   };
 
   // Helper to check availability for a specific vehicle against currently selected dates
-  const isVehicleAvailable = (vId) => {
-    if (!formData.pickupDate || !formData.dropoffDate) return true;
+  const getVehicleAvailability = (vId) => {
+    if (!formData.pickupDate || !formData.dropoffDate) return { available: true, reason: null };
 
     // Check for conflicts
     const vehicleBookings = allBookings.filter(b => b.vehicleId === vId);
-    const hasConflict = vehicleBookings.some(b =>
+    const conflicts = vehicleBookings.filter(b =>
       overlaps(formData.pickupDate, formData.dropoffDate, b.startDate, b.endDate)
     );
 
-    return !hasConflict;
+    if (conflicts.length > 0) {
+      const conflict = conflicts[0];
+      return { available: false, reason: `Booked until ${conflict.endDate}` };
+    }
+
+    return { available: true, reason: null };
   };
+
+  const currentVehicleAvailability = useMemo(() => {
+    return getVehicleAvailability(formData.vehicleId);
+  }, [formData.vehicleId, formData.pickupDate, formData.dropoffDate, allBookings]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,8 +87,8 @@ export default function BookVehicle() {
       }
 
       // Client-side pre-check for availability
-      if (!isVehicleAvailable(formData.vehicleId)) {
-        throw new Error("Selected dates are not available for this vehicle. Please choose another vehicle or different dates.");
+      if (!currentVehicleAvailability.available) {
+        throw new Error(`Selected dates are not available for this vehicle. ${currentVehicleAvailability.reason || 'Please choose another vehicle.'}`);
       }
 
       // Calculate days roughly
@@ -180,7 +189,7 @@ Dropoff: ${formData.dropoffDate}
             </svg>
           </div>
           <h1>Booking Confirmed!</h1>
-          <p>Thank you for choosing Paranamanna Travels. Your reservation has been received successfully.</p>
+          <p>Thank you for choosing CeylonExplorer. Your reservation has been received successfully.</p>
           <div className="success-message">
             <p>We will contact you shortly with confirmation details and payment instructions.</p>
             <p>A confirmation email has been sent to <strong>{formData.email}</strong></p>
@@ -227,14 +236,14 @@ Dropoff: ${formData.dropoffDate}
             <form className="booking-form-modern" onSubmit={handleSubmit}>
               <div className="form-section">
                 <h3>Vehicle Selection</h3>
-                {formData.vehicleId && formData.pickupDate && formData.dropoffDate && !isVehicleAvailable(formData.vehicleId) && (
+                {formData.vehicleId && formData.pickupDate && formData.dropoffDate && !currentVehicleAvailability.available && (
                   <div className="warning-alert" style={{ marginBottom: '1rem', padding: '10px', background: '#fff3cd', color: '#856404', borderRadius: '4px', border: '1px solid #ffeeba' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '8px', verticalAlign: 'text-bottom' }}>
                       <circle cx="12" cy="12" r="10"></circle>
                       <line x1="12" y1="8" x2="12" y2="12"></line>
                       <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    <strong>Note:</strong> The selected vehicle is already booked for these dates. Please choose different dates or another vehicle.
+                    <strong>Note:</strong> The selected vehicle is already booked for these dates ({currentVehicleAvailability.reason}). Please choose different dates or another vehicle.
                   </div>
                 )}
                 <div className="form-group-modern">
@@ -254,10 +263,10 @@ Dropoff: ${formData.dropoffDate}
                   >
                     <option value="">Choose your vehicle</option>
                     {vehicles.map(v => {
-                      const available = isVehicleAvailable(v.id);
+                      const { available, reason } = getVehicleAvailability(v.id);
                       return (
                         <option key={v.id} value={v.id} disabled={!available} style={{ color: available ? 'inherit' : '#999' }}>
-                          {v.name} {available ? '' : '(Unavailable for selected dates)'}
+                          {v.name} {available ? '' : `(${reason})`}
                         </option>
                       );
                     })}
@@ -464,12 +473,12 @@ Dropoff: ${formData.dropoffDate}
                   </svg>
                   +94 77 123 4567
                 </a>
-                <a href="mailto:info@paranamannatravels.lk">
+                <a href="mailto:info@ceylonexplorer.lk">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                     <polyline points="22,6 12,13 2,6"></polyline>
                   </svg>
-                  info@paranamannatravels.lk
+                  info@ceylonexplorer.lk
                 </a>
               </div>
             </div>
