@@ -15,11 +15,11 @@ export const FALLBACK_VEHICLES = [
     name: "Toyota HiAce",
     type: "Luxury",
     category: "Luxury",
-    capacity: 15,
+    capacity: 8,
     pricePerDay: 100,
     active: true,
     imageUrl: "/hiace.jpeg",
-    description: "Luxury Van, ideal for groups and family tours (9-15 passengers)."
+    description: "Luxury Van, ideal for groups and family tours (8 passengers)."
   },
   {
     id: "toyota-axio",
