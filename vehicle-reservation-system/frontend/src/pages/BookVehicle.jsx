@@ -11,6 +11,7 @@ export default function BookVehicle() {
 
   const [vehicles, setVehicles] = useState([]);
   const [allBookings, setAllBookings] = useState([]);
+  const [whatsappUrl, setWhatsappUrl] = useState('');
   const [formData, setFormData] = useState({
     vehicleId: vehicleId || '',
     pickupDate: searchParams.get('startDate') || '',
@@ -24,6 +25,7 @@ export default function BookVehicle() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Confirm Booking');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
 
@@ -77,8 +79,10 @@ export default function BookVehicle() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setLoadingText("Validating...");
     setError(null);
 
+    // 1. Synchronous Validation
     try {
       if (!formData.vehicleId) throw new Error("Please select a vehicle.");
 
@@ -86,40 +90,44 @@ export default function BookVehicle() {
         throw new Error("Drop-off date must be the same as or after pick-up date.");
       }
 
-      // Client-side pre-check for availability
+      // Check availability synchronously
       if (!currentVehicleAvailability.available) {
         throw new Error(`Selected dates are not available for this vehicle. ${currentVehicleAvailability.reason || 'Please choose another vehicle.'}`);
       }
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      setLoadingText("Confirm Booking"); // Reset text on error
+      return;
+    }
 
-      // Calculate days roughly
-      const starT = new Date(formData.pickupDate);
-      const endT = new Date(formData.dropoffDate);
-      const diffTime = Math.abs(endT - starT);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+    // 2. Prepare Data
+    const vehicle = vehicles.find(v => v.id === formData.vehicleId);
 
-      // Find vehicle for price
-      const vehicle = vehicles.find(v => v.id === formData.vehicleId);
-      const price = vehicle ? vehicle.pricePerDay * diffDays : 0;
+    // Calculate price
+    const starT = new Date(formData.pickupDate);
+    const endT = new Date(formData.dropoffDate);
+    const diffTime = Math.abs(endT - starT);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+    const price = vehicle ? vehicle.pricePerDay * diffDays : 0;
 
-      await createBooking({
-        vehicleId: formData.vehicleId,
-        vehicleName: vehicle ? vehicle.name : 'Unknown',
-        startDate: formData.pickupDate,
-        endDate: formData.dropoffDate, // Using date strings for simplicity
-        pickupLocation: formData.pickupLocation,
-        dropoffLocation: formData.dropoffLocation,
-        customerName: formData.name,
-        customerEmail: formData.email,
-        phoneNumber: formData.phone,
-        notes: formData.notes,
-        totalPrice: price
-      });
+    const bookingPayload = {
+      vehicleId: formData.vehicleId,
+      vehicleName: vehicle ? vehicle.name : 'Unknown',
+      startDate: formData.pickupDate,
+      endDate: formData.dropoffDate,
+      pickupLocation: formData.pickupLocation,
+      dropoffLocation: formData.dropoffLocation,
+      customerName: formData.name,
+      customerEmail: formData.email,
+      phoneNumber: formData.phone,
+      notes: formData.notes,
+      totalPrice: price
+    };
 
-      setSuccess(true);
+    // 3. Generate WhatsApp Link
+    const message = `*New Booking Request*
 
-      // WhatsApp Integration (Keep existing logic)
-      const message = `*New Booking Request*
-      
 *Vehicle:* ${vehicle ? vehicle.name : 'Unknown'}
 *Ref:* ${formData.vehicleId}
 
@@ -137,45 +145,49 @@ Dropoff: ${formData.dropoffDate}
 *Notes:* ${formData.notes || 'None'}
 `;
 
-      const encodedMessage = encodeURIComponent(message);
-      window.open(`https://wa.me/94767439588?text=${encodedMessage}`, '_blank');
+    const encodedMessage = encodeURIComponent(message);
+    const waUrl = `https://wa.me/94767439588?text=${encodedMessage}`;
+    setWhatsappUrl(waUrl);
 
-      window.scrollTo(0, 0);
+    // 4. Reliable Save Logic (Wait for DB with Safety Timeout)
+    try {
+      setLoadingText("Saving Booking..."); // Tell user we are contacting server
+
+      // Create a timeout promise that rejects after 8000ms (Generous window for mobile)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out")), 8000)
+      );
+
+      // Race the DB save against the timeout
+      await Promise.race([
+        createBooking(bookingPayload),
+        timeoutPromise
+      ]);
+
+      console.log("Booking saved successfully");
     } catch (err) {
-      console.error(err);
-      // Soft fail fallback logic...
-      if (err.message && (err.message.includes("permission") || err.code === "permission-denied")) {
-        setSuccess(true);
-        // ... (Keep existing fallback WhatsApp logic)
-        const fallbackPrice = vehicles.find(v => v.id === formData.vehicleId)?.pricePerDay * (Math.ceil(Math.abs(new Date(`${formData.dropoffDate}T${formData.dropoffTime || '12:00'}`) - new Date(`${formData.pickupDate}T${formData.pickupTime || '12:00'}`)) / (1000 * 60 * 60 * 24)) || 1) || 0;
-        const message = `*New Booking Request*
-      
-*Vehicle:* ${vehicles.find(v => v.id === formData.vehicleId)?.name || 'Unknown'}
-*Ref:* ${formData.vehicleId}
-
-*Customer Details:*
-Name: ${formData.name}
-Phone: ${formData.phone}
-Email: ${formData.email}
-
-*Journey Details:*
-From: ${formData.pickupLocation}
-To: ${formData.dropoffLocation}
-Pickup: ${formData.pickupDate}
-Dropoff: ${formData.dropoffDate}
-
-*Notes:* ${formData.notes || 'None'}
-`;
-        const encodedMessage = encodeURIComponent(message);
-        window.open(`https://wa.me/94767439588?text=${encodedMessage}`, '_blank');
-        window.scrollTo(0, 0);
-        return;
-      }
-
-      setError("Failed to submit booking. " + err.message);
-    } finally {
-      setLoading(false);
+      console.warn("Booking save warning (proceeding to redirect):", err);
+      // Proceed to redirect anyway.
+      // If save failed or timed out, we still want the user to contact us via WhatsApp.
     }
+
+    // 5. Redirect Logic
+    setLoadingText("Redirecting to WhatsApp..."); // Explain next step
+
+    // Small artificial delay so user can read "Redirecting..."
+    await new Promise(r => setTimeout(r, 500));
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.location.href = waUrl;
+    } else {
+      window.open(waUrl, '_blank');
+    }
+
+    setSuccess(true);
+    setLoading(false);
+    setLoadingText("Confirm Booking"); // Reset text after completion
+    window.scrollTo(0, 0);
   };
 
   if (success) {
@@ -189,21 +201,32 @@ Dropoff: ${formData.dropoffDate}
             </svg>
           </div>
           <h1>Booking Confirmed!</h1>
-          <p>Thank you for choosing CeylonExplorer. Your reservation has been received successfully.</p>
+          <p>Thank you for choosing CeylonExplorer. Redirecting you to WhatsApp...</p>
           <div className="success-message">
-            <p>We will contact you shortly with confirmation details and payment instructions.</p>
-            <p>A confirmation email has been sent to <strong>{formData.email}</strong></p>
+            <p>If WhatsApp does not open in a few seconds, please click the button below.</p>
+            <p>A confirmation email will be sent to <strong>{formData.email}</strong> once processed.</p>
           </div>
           <div className="success-actions">
-            <button onClick={() => navigate('/')} className="btn-primary">
+            <button onClick={() => navigate('/')} className="btn-secondary">
               Back to Home
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              </svg>
             </button>
             <button onClick={() => navigate('/fleet')} className="btn-secondary">
               View Our Fleet
             </button>
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                className="btn-primary"
+                style={{ backgroundColor: '#25D366', borderColor: '#25D366', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
+                target={/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? "_self" : "_blank"}
+                rel="noopener noreferrer"
+              >
+                Open WhatsApp
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                </svg>
+              </a>
+            )}
           </div>
         </div>
       </main>
@@ -407,7 +430,7 @@ Dropoff: ${formData.dropoffDate}
                 {loading ? (
                   <>
                     <div className="spinner-small"></div>
-                    Processing...
+                    {loadingText}
                   </>
                 ) : (
                   <>
